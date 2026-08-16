@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import "./ScanResult.css";
 import "./ReportButton.css";
 import { quarantineFile } from "../../utils/quarantineStore";
+import { buildReportHtml, saveReport, downloadStoredReport } from "../../utils/reportStore";
 
 const API_BASE_URL =
   window.location.hostname === "localhost" ||
@@ -19,6 +20,7 @@ function saveScanHistory(scan) {
     if (index >= 0) history[index] = { ...history[index], ...scan };
     else history.unshift(scan);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 100)));
+    window.dispatchEvent(new Event("securescan-history-updated"));
   } catch (storageError) {
     console.error("Unable to save scan history:", storageError);
   }
@@ -51,26 +53,27 @@ async function readApiResponse(response, fallbackMessage) {
   return data;
 }
 
-function downloadScanReport({ file, result, analysisId }) {
-  const reportDate = new Date().toLocaleString();
-  const malicious = Number(result?.malicious || 0);
-  const suspicious = Number(result?.suspicious || 0);
-  const harmless = Number(result?.harmless || 0);
-  const undetected = Number(result?.undetected || 0);
-  const total = malicious + suspicious + harmless + undetected;
-  const status = malicious > 0 ? "Malicious Threat Detected" : suspicious > 0 ? "Suspicious Activity Detected" : "No Major Threats Detected";
-
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>SecureScan Report - ${file?.name || "file"}</title><style>body{font-family:Arial,sans-serif;margin:40px;color:#17213a}h1{color:#2563eb}.status{padding:14px;border-radius:8px;background:${malicious > 0 ? "#fff1f3" : suspicious > 0 ? "#fff7e8" : "#effaf3"}}table{border-collapse:collapse;width:100%;margin-top:20px}td,th{border:1px solid #ddd;padding:10px;text-align:left}th{background:#f5f8fc}</style></head><body><h1>SecureScan Security Report</h1><div class="status"><strong>${status}</strong></div><table><tr><th>File</th><td>${file?.name || "Unknown"}</td></tr><tr><th>Size</th><td>${file ? (file.size / 1024 / 1024).toFixed(2) : "0.00"} MB</td></tr><tr><th>Generated</th><td>${reportDate}</td></tr><tr><th>VirusTotal Analysis ID</th><td>${analysisId || "N/A"}</td></tr><tr><th>Malicious</th><td>${malicious}</td></tr><tr><th>Suspicious</th><td>${suspicious}</td></tr><tr><th>Harmless</th><td>${harmless}</td></tr><tr><th>Undetected</th><td>${undetected}</td></tr><tr><th>Total Engines</th><td>${total}</td></tr></table></body></html>`;
-
-  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `SecureScan-Report-${(file?.name || "scan").replace(/[^a-z0-9._-]/gi, "_")}.html`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
+function createAndSaveReport({ file, result, analysisId, scannedAt }) {
+  const generatedAt = new Date(scannedAt || Date.now()).toLocaleString();
+  const html = buildReportHtml({
+    fileName: file?.name || "Unknown file",
+    fileSize: file?.size || 0,
+    result,
+    analysisId,
+    generatedAt,
+  });
+  return saveReport({
+    id: `report-${analysisId}`,
+    analysisId,
+    fileName: file?.name || "Unknown file",
+    fileSize: file?.size || 0,
+    generatedAt,
+    status: Number(result?.malicious || 0) > 0 ? "Threat Detected" : Number(result?.suspicious || 0) > 0 ? "Suspicious" : "Clean",
+    malicious: Number(result?.malicious || 0),
+    suspicious: Number(result?.suspicious || 0),
+    html,
+    fileNameOnDisk: `SecureScan-Report-${(file?.name || "scan").replace(/[^a-z0-9._-]/gi, "_")}.html`,
+  });
 }
 
 function ScanningPanel({ selectedFile }) {
@@ -79,6 +82,7 @@ function ScanningPanel({ selectedFile }) {
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
   const [analysisId, setAnalysisId] = useState(null);
+  const [report, setReport] = useState(null);
   const [quarantineStatus, setQuarantineStatus] = useState("");
 
   const fileFingerprint = useMemo(
@@ -99,6 +103,13 @@ function ScanningPanel({ selectedFile }) {
       setResult(savedScan.result);
       setAnalysisId(savedScan.id);
       setError("");
+      const savedReport = createAndSaveReport({
+        file: selectedFile,
+        result: savedScan.result,
+        analysisId: savedScan.id,
+        scannedAt: savedScan.scannedAt,
+      });
+      setReport(savedReport);
       return () => { cancelled = true; };
     }
 
@@ -108,6 +119,7 @@ function ScanningPanel({ selectedFile }) {
         setStatus("Connecting to SecureScan...");
         setError("");
         setResult(null);
+        setReport(null);
         setQuarantineStatus("");
         const formData = new FormData();
         formData.append("file", selectedFile);
@@ -129,10 +141,12 @@ function ScanningPanel({ selectedFile }) {
             setProgress(Math.max(15, Math.min(100, apiProgress)));
             if (data.status === "completed") {
               const scanStats = data.result?.attributes?.stats || null;
+              const completedAt = new Date().toISOString();
               setProgress(100);
               setStatus("Scan complete");
               setResult(scanStats);
-              saveScanHistory({ id: historyId, fileName: selectedFile.name, fileSize: selectedFile.size, lastModified: selectedFile.lastModified, scannedAt: new Date().toISOString(), status: "Completed", progress: 100, result: scanStats });
+              saveScanHistory({ id: historyId, fileName: selectedFile.name, fileSize: selectedFile.size, lastModified: selectedFile.lastModified, scannedAt: completedAt, status: "Completed", progress: 100, result: scanStats });
+              setReport(createAndSaveReport({ file: selectedFile, result: scanStats, analysisId: historyId, scannedAt: completedAt }));
               return;
             }
             saveScanHistory({ id: historyId, status: data.status === "queued" ? "Queued" : "Scanning", progress: Math.max(15, Math.min(100, apiProgress)) });
@@ -172,6 +186,11 @@ function ScanningPanel({ selectedFile }) {
     }
   };
 
+  const handleDownloadReport = () => {
+    if (!report) return;
+    downloadStoredReport(report);
+  };
+
   const fileSize = selectedFile ? selectedFile.size / 1024 / 1024 : 0;
   const malicious = Number(result?.malicious || 0);
   const suspicious = Number(result?.suspicious || 0);
@@ -184,9 +203,9 @@ function ScanningPanel({ selectedFile }) {
     <div className="scanning-panel">
       <div className="scanning-title">
         <span>{status}</span>
-        {result && (
+        {result && report && (
           <div className="scan-report-actions">
-            <button className="download-report-btn" type="button" onClick={() => downloadScanReport({ file: selectedFile, result, analysisId })}>
+            <button className="download-report-btn" type="button" onClick={handleDownloadReport}>
               ↓&nbsp; Download Report
             </button>
           </div>
