@@ -3,18 +3,14 @@ import React, { useEffect, useMemo, useState } from "react";
 const NOTIFICATIONS_KEY = "securescan_notifications";
 const HISTORY_KEY = "securescan_scan_history";
 
-const seedNotifications = () => {
+const getHistoryNotifications = () => {
   try {
-    const existing = JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "[]");
-    if (Array.isArray(existing) && existing.length) return existing;
-
     const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
     if (!Array.isArray(history)) return [];
-
-    return history.slice(0, 20).map((item) => ({
+    return history.slice(0, 20).filter((item) => item.result && (item.status === "Completed" || item.status === "Quarantined")).map((item) => ({
       id: `scan-${item.id}`,
       type: item.result?.malicious > 0 ? "danger" : "success",
-      title: item.result?.malicious > 0 ? "Threat detected" : "Scan completed",
+      title: item.result?.malicious > 0 ? "Threat Detected" : "Scan Completed",
       message: item.result?.malicious > 0
         ? `${item.fileName} contains ${item.result.malicious} malicious detection(s).`
         : `${item.fileName} was scanned successfully with no malicious detections.`,
@@ -26,19 +22,32 @@ const seedNotifications = () => {
   }
 };
 
+const loadMergedNotifications = () => {
+  try {
+    const saved = JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "[]");
+    const savedList = Array.isArray(saved) ? saved : [];
+    const historyList = getHistoryNotifications();
+    const byId = new Map();
+
+    [...savedList, ...historyList].forEach((item) => {
+      const existing = byId.get(item.id);
+      byId.set(item.id, existing ? { ...item, read: existing.read } : item);
+    });
+
+    return [...byId.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 50);
+  } catch {
+    return [];
+  }
+};
+
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("all");
 
   const loadNotifications = () => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "null");
-      const data = Array.isArray(saved) && saved.length ? saved : seedNotifications();
-      setNotifications(data);
-      if (!saved && data.length) localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(data));
-    } catch {
-      setNotifications([]);
-    }
+    const data = loadMergedNotifications();
+    setNotifications(data);
+    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(data));
   };
 
   useEffect(() => {
@@ -46,13 +55,23 @@ function Notifications() {
     const onStorage = (event) => {
       if (event.key === NOTIFICATIONS_KEY || event.key === HISTORY_KEY) loadNotifications();
     };
+    const onCustomUpdate = () => loadNotifications();
     window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
+    window.addEventListener("securescan-notifications-updated", onCustomUpdate);
+    window.addEventListener("securescan-history-updated", onCustomUpdate);
+    const interval = window.setInterval(loadNotifications, 2000);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("securescan-notifications-updated", onCustomUpdate);
+      window.removeEventListener("securescan-history-updated", onCustomUpdate);
+      window.clearInterval(interval);
+    };
   }, []);
 
   const persist = (next) => {
     setNotifications(next);
     localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next));
+    window.dispatchEvent(new Event("securescan-notifications-updated"));
   };
 
   const unread = notifications.filter((item) => !item.read).length;
@@ -67,7 +86,6 @@ function Notifications() {
   const clearAll = () => {
     if (window.confirm("Clear all notifications?")) persist([]);
   };
-
   const markRead = (id) => persist(notifications.map((item) => item.id === id ? { ...item, read: true } : item));
 
   return (
