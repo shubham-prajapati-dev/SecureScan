@@ -1,0 +1,55 @@
+/* Isolated layout for the scan report action. */
+.scanning-title {
+  display: block !important;
+}
+
+.scan-report-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.download-report-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 170px;
+  height: 42px;
+  padding: 0 18px;
+  border: 1px solid #dc3545;
+  border-radius: 9px;
+  background: #dc3545;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(220, 53, 69, 0.18);
+  transition: background .2s ease, border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+}
+
+.download-report-btn:hover {
+  background: #c82333;
+  border-color: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(220, 53, 69, 0.25);
+}
+
+.download-report-btn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  .scan-report-actions {
+    justify-content: flex-start;
+  }
+
+  .download-report-btn {
+    width: 100%;
+    max-width: 220px;
+  }
+}
