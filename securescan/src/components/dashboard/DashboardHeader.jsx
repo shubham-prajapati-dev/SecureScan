@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import "./NotificationDropdown.css";
 
 const NOTIFICATIONS_KEY = "securescan_notifications";
 const HISTORY_KEY = "securescan_scan_history";
@@ -28,15 +29,11 @@ function getNotifications() {
     const savedList = Array.isArray(saved) ? saved : [];
     const historyList = getHistoryNotifications();
     const byId = new Map();
-
     [...savedList, ...historyList].forEach((item) => {
       const existing = byId.get(item.id);
       byId.set(item.id, existing ? { ...item, read: existing.read } : item);
     });
-
-    return [...byId.values()]
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 50);
+    return [...byId.values()].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 50);
   } catch {
     return [];
   }
@@ -58,7 +55,6 @@ function formatTime(dateValue) {
 function DashboardHeader({ activePage }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
-
   const loadNotifications = () => setNotifications(getNotifications());
 
   useEffect(() => {
@@ -99,14 +95,9 @@ function DashboardHeader({ activePage }) {
         <h1>{activePage}</h1>
         <p>Stay safe by scanning your files for malicious threats.</p>
       </div>
-
       <div className="header-actions">
         <div className="notification-wrapper">
-          <button
-            className={`notification-button ${showNotifications ? "notification-active" : ""}`}
-            onClick={() => setShowNotifications((value) => !value)}
-            aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}
-          >
+          <button className={`notification-button ${showNotifications ? "notification-active" : ""}`} onClick={() => setShowNotifications((value) => !value)} aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}>
             <svg className="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
               <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -118,43 +109,23 @@ function DashboardHeader({ activePage }) {
           {showNotifications && (
             <div className="notification-dropdown">
               <div className="notification-dropdown-header">
-                <div>
-                  <h3>Notifications</h3>
-                  <span>{unread} unread notification{unread === 1 ? "" : "s"}</span>
-                </div>
-                {unread > 0 && <button onClick={markAllRead}>Mark all read</button>}
+                <div><h3>Notifications</h3><span>{unread} unread notification{unread === 1 ? "" : "s"}</span></div>
+                {unread > 0 && <button type="button" onClick={markAllRead}>Mark all read</button>}
               </div>
-
               <div className="notification-list">
-                {visibleNotifications.length === 0 ? (
-                  <div className="notification-empty">You're all caught up.</div>
-                ) : visibleNotifications.map((notification) => (
-                  <button
-                    className={`notification-item ${notification.read ? "read" : "unread"}`}
-                    key={notification.id}
-                    onClick={() => markRead(notification.id)}
-                  >
-                    <div className={`notification-item-icon ${notification.type}`}>
-                      {notification.type === "danger" ? "⚠️" : "🛡️"}
-                    </div>
-                    <div className="notification-item-content">
-                      <strong>{notification.title}</strong>
-                      <p>{notification.message}</p>
-                      <span>{formatTime(notification.createdAt)}</span>
-                    </div>
+                {visibleNotifications.length === 0 ? <div className="notification-empty">You're all caught up.</div> : visibleNotifications.map((notification) => (
+                  <button className={`notification-item ${notification.read ? "read" : "unread"}`} key={notification.id} type="button" onClick={() => markRead(notification.id)}>
+                    <div className={`notification-item-icon ${notification.type}`}>{notification.type === "danger" ? "⚠️" : "🛡️"}</div>
+                    <div className="notification-item-content"><strong>{notification.title}</strong><p>{notification.message}</p><span>{formatTime(notification.createdAt)}</span></div>
                     {!notification.read && <span className="unread-dot"></span>}
                   </button>
                 ))}
               </div>
-
-              <button className="view-all-notifications" onClick={() => setShowNotifications(false)}>
-                View all →
-              </button>
+              <button className="view-all-notifications" type="button" onClick={() => setShowNotifications(false)}>View all →</button>
             </div>
           )}
         </div>
-
-        <button className="header-theme-button" aria-label="Toggle theme">◐</button>
+        <button className="header-theme-button" aria-label="Toggle theme" type="button">◐</button>
       </div>
     </header>
   );
