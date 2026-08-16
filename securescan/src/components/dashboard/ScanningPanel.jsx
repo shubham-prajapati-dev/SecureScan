@@ -1,6 +1,38 @@
 import React, { useEffect, useState } from "react";
 
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
+const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const HISTORY_KEY = "securescan_scan_history";
+
+function saveScanHistory(scan) {
+  try {
+    const existing = JSON.parse(
+      localStorage.getItem(HISTORY_KEY) || "[]"
+    );
+
+    const history = Array.isArray(existing) ? existing : [];
+    const index = history.findIndex(
+      (item) => item.id === scan.id
+    );
+
+    if (index >= 0) {
+      history[index] = {
+        ...history[index],
+        ...scan,
+      };
+    } else {
+      history.unshift(scan);
+    }
+
+    localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify(history.slice(0, 100))
+    );
+  } catch (storageError) {
+    console.error("Unable to save scan history:", storageError);
+  }
+}
 
 function ScanningPanel({ selectedFile }) {
   const [progress, setProgress] = useState(0);
@@ -13,6 +45,7 @@ function ScanningPanel({ selectedFile }) {
 
     let cancelled = false;
     let pollTimer;
+    let historyId = null;
 
     const scanFile = async () => {
       try {
@@ -37,13 +70,27 @@ function ScanningPanel({ selectedFile }) {
 
         if (cancelled) return;
 
+        historyId = uploadData.analysisId;
+
+        saveScanHistory({
+          id: historyId,
+          fileName: selectedFile.name,
+          fileSize: selectedFile.size,
+          scannedAt: new Date().toISOString(),
+          status: "Scanning",
+          progress: 15,
+          result: null,
+        });
+
         setProgress(15);
         setStatus("File uploaded. VirusTotal is analysing it...");
 
         const pollStatus = async () => {
           try {
             const response = await fetch(
-              `${API_BASE_URL}/api/scan/${encodeURIComponent(uploadData.analysisId)}`
+              `${API_BASE_URL}/api/scan/${encodeURIComponent(
+                uploadData.analysisId
+              )}`
             );
 
             const data = await response.json().catch(() => ({}));
@@ -58,11 +105,30 @@ function ScanningPanel({ selectedFile }) {
             setProgress(Math.max(15, Math.min(100, apiProgress)));
 
             if (data.status === "completed") {
+              const scanStats = data.result?.attributes?.stats || null;
+
               setProgress(100);
               setStatus("Scan complete");
-              setResult(data.result?.attributes?.stats || null);
+              setResult(scanStats);
+
+              saveScanHistory({
+                id: historyId,
+                fileName: selectedFile.name,
+                fileSize: selectedFile.size,
+                scannedAt: new Date().toISOString(),
+                status: "Completed",
+                progress: 100,
+                result: scanStats,
+              });
+
               return;
             }
+
+            saveScanHistory({
+              id: historyId,
+              status: data.status === "queued" ? "Queued" : "Scanning",
+              progress: Math.max(15, Math.min(100, apiProgress)),
+            });
 
             setStatus(
               data.status === "queued"
@@ -75,6 +141,17 @@ function ScanningPanel({ selectedFile }) {
             if (!cancelled) {
               setError(pollError.message || "Scan status check failed.");
               setStatus("Scan failed");
+
+              if (historyId) {
+                saveScanHistory({
+                  id: historyId,
+                  fileName: selectedFile.name,
+                  fileSize: selectedFile.size,
+                  status: "Failed",
+                  scannedAt: new Date().toISOString(),
+                  error: pollError.message || "Scan status check failed.",
+                });
+              }
             }
           }
         };
@@ -101,7 +178,9 @@ function ScanningPanel({ selectedFile }) {
 
   return (
     <div className="scanning-panel">
-      <div className="scanning-title">{status}</div>
+      <div className="scanning-title">
+        {status}
+      </div>
 
       <div className="scanning-content">
         <div className="file-info">
@@ -114,7 +193,10 @@ function ScanningPanel({ selectedFile }) {
 
         <div className="progress-section">
           <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${progress}%` }} />
+            <div
+              className="progress-fill"
+              style={{ width: `${progress}%` }}
+            />
           </div>
           <p>{selectedFile?.name}</p>
         </div>
