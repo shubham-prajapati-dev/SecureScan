@@ -1,7 +1,5 @@
 import React, { useEffect, useState } from "react";
 
-// In production, always use the same Vercel origin so the scanner never
-// accidentally tries to call localhost from a user's browser.
 const API_BASE_URL =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1"
@@ -16,11 +14,8 @@ function saveScanHistory(scan) {
     const history = Array.isArray(existing) ? existing : [];
     const index = history.findIndex((item) => item.id === scan.id);
 
-    if (index >= 0) {
-      history[index] = { ...history[index], ...scan };
-    } else {
-      history.unshift(scan);
-    }
+    if (index >= 0) history[index] = { ...history[index], ...scan };
+    else history.unshift(scan);
 
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 100)));
   } catch (storageError) {
@@ -32,11 +27,8 @@ async function readApiResponse(response, fallbackMessage) {
   const text = await response.text();
   let data = {};
 
-  try {
-    data = text ? JSON.parse(text) : {};
-  } catch {
-    data = {};
-  }
+  try { data = text ? JSON.parse(text) : {}; }
+  catch { data = {}; }
 
   if (!response.ok || !data.success) {
     throw new Error(data.message || `${fallbackMessage} (${response.status})`);
@@ -73,13 +65,9 @@ function ScanningPanel({ selectedFile }) {
           body: formData,
         });
 
-        const uploadData = await readApiResponse(
-          uploadResponse,
-          "Unable to upload file"
-        );
+        const uploadData = await readApiResponse(uploadResponse, "Unable to upload file");
 
         if (cancelled) return;
-
         historyId = uploadData.analysisId;
 
         saveScanHistory({
@@ -101,11 +89,7 @@ function ScanningPanel({ selectedFile }) {
               `${API_BASE_URL}/api/scan/${encodeURIComponent(uploadData.analysisId)}`
             );
 
-            const data = await readApiResponse(
-              response,
-              "Unable to get scan status"
-            );
-
+            const data = await readApiResponse(response, "Unable to get scan status");
             if (cancelled) return;
 
             const apiProgress = Number(data.progress) || 0;
@@ -127,7 +111,6 @@ function ScanningPanel({ selectedFile }) {
                 progress: 100,
                 result: scanStats,
               });
-
               return;
             }
 
@@ -187,6 +170,11 @@ function ScanningPanel({ selectedFile }) {
   }, [selectedFile]);
 
   const fileSize = selectedFile ? selectedFile.size / 1024 / 1024 : 0;
+  const malicious = Number(result?.malicious || 0);
+  const suspicious = Number(result?.suspicious || 0);
+  const harmless = Number(result?.harmless || 0);
+  const undetected = Number(result?.undetected || 0);
+  const total = malicious + suspicious + harmless + undetected;
 
   return (
     <div className="scanning-panel">
@@ -211,21 +199,48 @@ function ScanningPanel({ selectedFile }) {
         <strong className="progress-number">{progress}%</strong>
 
         {result && (
-          <div className="scan-result">
-            <strong>
-              {result.malicious || 0} malicious / {result.suspicious || 0} suspicious
-            </strong>
-            <span>
-              Harmless: {result.harmless || 0} · Undetected: {result.undetected || 0}
-            </span>
+          <div className="scan-result-card">
+            <div className="scan-result-top">
+              <div>
+                <span className="scan-result-label">SECURITY ANALYSIS</span>
+                <strong className={malicious > 0 ? "danger-number" : "safe-number"}>
+                  {malicious > 0 ? "Threats detected" : "No major threats detected"}
+                </strong>
+              </div>
+              <div className="scan-result-score">
+                <span>{malicious}</span>
+                <small>malicious</small>
+              </div>
+            </div>
+
+            <div className="scan-result-bar">
+              <div className="bar-malicious" style={{ width: `${total ? (malicious / total) * 100 : 0}%` }} />
+              <div className="bar-suspicious" style={{ width: `${total ? (suspicious / total) * 100 : 0}%` }} />
+              <div className="bar-safe" style={{ width: `${total ? ((harmless + undetected) / total) * 100 : 100}%` }} />
+            </div>
+
+            <div className="scan-result-grid">
+              <div className="result-stat malicious-stat">
+                <span className="result-dot" />
+                <div><strong>{malicious}</strong><small>Malicious</small></div>
+              </div>
+              <div className="result-stat suspicious-stat">
+                <span className="result-dot" />
+                <div><strong>{suspicious}</strong><small>Suspicious</small></div>
+              </div>
+              <div className="result-stat harmless-stat">
+                <span className="result-dot" />
+                <div><strong>{harmless}</strong><small>Harmless</small></div>
+              </div>
+              <div className="result-stat undetected-stat">
+                <span className="result-dot" />
+                <div><strong>{undetected}</strong><small>Undetected</small></div>
+              </div>
+            </div>
           </div>
         )}
 
-        {error && (
-          <div className="scan-error" role="alert">
-            {error}
-          </div>
-        )}
+        {error && <div className="scan-error" role="alert">{error}</div>}
       </div>
     </div>
   );
