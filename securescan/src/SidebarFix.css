@@ -3,108 +3,34 @@
    Keeps the lower sidebar cards in normal, non-overlapping space.
 ========================================================= */
 
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  overflow: hidden;
-}
+.sidebar { display:flex; flex-direction:column; min-height:100vh; overflow:hidden; }
+.sidebar-logo { flex:0 0 auto; }
+.sidebar-menu { flex:1 1 auto; min-height:0; overflow-y:auto; overflow-x:hidden; padding-right:2px; padding-bottom:8px; }
+.sidebar-menu::-webkit-scrollbar { width:4px; }
+.sidebar-menu::-webkit-scrollbar-thumb { background:rgba(255,255,255,.16); border-radius:999px; }
+.realtime-box,.sidebar-home,.sidebar-profile { position:static; left:auto; right:auto; bottom:auto; flex:0 0 auto; }
+.realtime-box { margin:12px 0 10px; width:100%; min-height:58px; padding:11px 13px; align-items:center; }
+.realtime-box strong { white-space:nowrap; line-height:1.2; }
+.realtime-box span { line-height:1.2; }
+.sidebar-home { width:100%; margin:0 0 12px; min-height:36px; }
 
-.sidebar-logo {
-  flex: 0 0 auto;
-}
+/* Anumat profile is the entry point for the pricing page. */
+.sidebar-profile { width:100%; min-height:52px; padding:5px 8px; display:flex; align-items:center; gap:10px; border:1px solid transparent; border-radius:12px; background:transparent; color:inherit; text-align:left; cursor:pointer; }
+.sidebar-profile:hover { background:rgba(255,255,255,.06); border-color:rgba(255,255,255,.08); }
+.sidebar-profile.pricing-active { background:rgba(37,99,235,.16); border-color:rgba(96,165,250,.28); }
+.sidebar-profile > div:nth-child(2) { min-width:0; flex:1; }
+.sidebar-profile strong,.sidebar-profile span { display:block; }
+.sidebar-profile strong { color:#fff; font-size:11px; line-height:1.2; }
+.sidebar-profile span { margin-top:3px; color:#91a6c4; font-size:9px; }
+.sidebar-profile > b { color:#8fb5ff; font-size:18px; font-weight:500; }
 
-.sidebar-menu {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 2px;
-  padding-bottom: 8px;
-}
-
-.sidebar-menu::-webkit-scrollbar {
-  width: 4px;
-}
-
-.sidebar-menu::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,.16);
-  border-radius: 999px;
-}
-
-/* Keep these three elements separated at the bottom. */
-.realtime-box,
-.sidebar-home,
-.sidebar-profile {
-  position: static;
-  left: auto;
-  right: auto;
-  bottom: auto;
-  flex: 0 0 auto;
-}
-
-.realtime-box {
-  margin: 12px 0 10px;
-  width: 100%;
-  min-height: 58px;
-  padding: 11px 13px;
-  align-items: center;
-}
-
-.realtime-box strong {
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-.realtime-box span {
-  line-height: 1.2;
-}
-
-.sidebar-home {
-  width: 100%;
-  margin: 0 0 12px;
-  min-height: 36px;
-}
-
-.sidebar-profile {
-  width: 100%;
-  min-height: 48px;
-  padding: 4px 0;
-}
-
-@media (max-height: 700px) {
-  .sidebar {
-    padding-top: 12px;
-    padding-bottom: 10px;
-  }
-
-  .sidebar-logo {
-    height: 58px;
-    margin-bottom: 10px;
-  }
-
-  .sidebar-menu {
-    gap: 3px;
-  }
-
-  .sidebar-menu-item {
-    padding: 9px 12px;
-  }
-
-  .realtime-box {
-    margin-top: 8px;
-    margin-bottom: 7px;
-    min-height: 50px;
-    padding: 8px 10px;
-  }
-
-  .sidebar-home {
-    margin-bottom: 7px;
-    min-height: 32px;
-  }
-
-  .profile-avatar {
-    width: 34px;
-    height: 34px;
-  }
+@media (max-height:700px) {
+  .sidebar { padding-top:12px; padding-bottom:10px; }
+  .sidebar-logo { height:58px; margin-bottom:10px; }
+  .sidebar-menu { gap:3px; }
+  .sidebar-menu-item { padding:9px 12px; }
+  .realtime-box { margin-top:8px; margin-bottom:7px; min-height:50px; padding:8px 10px; }
+  .sidebar-home { margin-bottom:7px; min-height:32px; }
+  .sidebar-profile { min-height:44px; }
+  .profile-avatar { width:34px; height:34px; }
 }
