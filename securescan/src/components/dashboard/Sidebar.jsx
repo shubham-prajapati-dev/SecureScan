@@ -12,6 +12,8 @@ function Sidebar({ activePage, setActivePage, onHome }) {
     ["?", "Help & Support"],
   ];
 
+  const openPricing = () => setActivePage("Pricing");
+
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -35,11 +37,11 @@ function Sidebar({ activePage, setActivePage, onHome }) {
 
       <button className="sidebar-home" onClick={onHome}>← Back to Home</button>
 
-      <div className="sidebar-profile">
+      <button className={`sidebar-profile ${activePage === "Pricing" ? "pricing-active" : ""}`} onClick={openPricing} type="button" title="Open pricing plans">
         <div className="profile-avatar">A</div>
-        <div><strong>Anumat</strong><span>Premium Plan</span></div>
-        <b></b>
-      </div>
+        <div><strong>Anumat</strong><span>{localStorage.getItem("securescan_plan") || "Premium Plan"}</span></div>
+        <b>›</b>
+      </button>
     </aside>
   );
 }
