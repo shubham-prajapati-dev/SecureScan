@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "").replace(/\/$/, "");
 
 function ScanningPanel({ selectedFile }) {
   const [progress, setProgress] = useState(0);
@@ -44,9 +43,7 @@ function ScanningPanel({ selectedFile }) {
         const pollStatus = async () => {
           try {
             const response = await fetch(
-              `${API_BASE_URL}/api/scan/${encodeURIComponent(
-                uploadData.analysisId
-              )}`
+              `${API_BASE_URL}/api/scan/${encodeURIComponent(uploadData.analysisId)}`
             );
 
             const data = await response.json().catch(() => ({}));
@@ -104,9 +101,7 @@ function ScanningPanel({ selectedFile }) {
 
   return (
     <div className="scanning-panel">
-      <div className="scanning-title">
-        {status}
-      </div>
+      <div className="scanning-title">{status}</div>
 
       <div className="scanning-content">
         <div className="file-info">
@@ -119,10 +114,7 @@ function ScanningPanel({ selectedFile }) {
 
         <div className="progress-section">
           <div className="progress-track">
-            <div
-              className="progress-fill"
-              style={{ width: `${progress}%` }}
-            />
+            <div className="progress-fill" style={{ width: `${progress}%` }} />
           </div>
           <p>{selectedFile?.name}</p>
         </div>
