@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./DashboardLive.css";
 
 const HISTORY_KEY = "securescan_scan_history";
 
