@@ -7,8 +7,7 @@ import SecuritySection from "../components/landing/SecuritySection";
 import AboutSection from "../components/landing/AboutSection";
 import LandingFooter from "../components/landing/LandingFooter";
 
-function LandingPage({ onFileSelect }) {
-
+function LandingPage({ onFileSelect, onGetStarted }) {
   const [darkMode, setDarkMode] = useState(false);
 
   const toggleDarkMode = () => {
@@ -16,14 +15,7 @@ function LandingPage({ onFileSelect }) {
   };
 
   return (
-    <div
-      className={
-        darkMode
-          ? "landing-page dark-mode"
-          : "landing-page"
-      }
-    >
-
+    <div className={darkMode ? "landing-page dark-mode" : "landing-page"}>
       <LandingNavbar
         onFileSelect={onFileSelect}
         darkMode={darkMode}
@@ -32,16 +24,13 @@ function LandingPage({ onFileSelect }) {
 
       <HeroSection
         onFileSelect={onFileSelect}
+        onGetStarted={onGetStarted}
       />
 
       <FeaturesSection />
-
       <SecuritySection />
-
       <AboutSection />
-
       <LandingFooter />
-
     </div>
   );
 }
