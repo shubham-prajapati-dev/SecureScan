@@ -22,24 +22,14 @@ function getHistory() {
 
 function createReportFromScan(scan) {
   const generatedAt = new Date(scan.scannedAt || Date.now()).toLocaleString();
-  const html = buildReportHtml({
-    fileName: scan.fileName,
-    fileSize: scan.fileSize,
-    result: scan.result,
-    analysisId: scan.id,
-    generatedAt,
-  });
+  const html = buildReportHtml({ fileName: scan.fileName, fileSize: scan.fileSize, result: scan.result, analysisId: scan.id, generatedAt });
   return {
     id: `report-${scan.id}`,
     analysisId: scan.id,
     fileName: scan.fileName,
     fileSize: scan.fileSize || 0,
     generatedAt,
-    status: Number(scan.result?.malicious || 0) > 0
-      ? "Threat Detected"
-      : Number(scan.result?.suspicious || 0) > 0
-        ? "Suspicious"
-        : "Clean",
+    status: Number(scan.result?.malicious || 0) > 0 ? "Threat Detected" : Number(scan.result?.suspicious || 0) > 0 ? "Suspicious" : "Clean",
     malicious: Number(scan.result?.malicious || 0),
     suspicious: Number(scan.result?.suspicious || 0),
     html,
@@ -60,8 +50,12 @@ function Reports() {
       .filter((scan) => !storedIds.has(scan.id))
       .map(createReportFromScan);
 
-    historyReports.forEach(saveReport);
-    setReports([...historyReports, ...stored].sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt)));
+    historyReports.forEach((report) => saveReport(report, false));
+    const merged = [...historyReports, ...stored].reduce((all, report) => {
+      if (!all.some((item) => item.id === report.id)) all.push(report);
+      return all;
+    }, []);
+    setReports(merged.sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt)));
   };
 
   useEffect(() => {
@@ -79,13 +73,11 @@ function Reports() {
     };
   }, []);
 
-  const filteredReports = useMemo(() => {
-    return reports.filter((report) => {
-      const matchesQuery = report.fileName.toLowerCase().includes(query.toLowerCase());
-      const matchesFilter = filter === "All" || report.status === filter;
-      return matchesQuery && matchesFilter;
-    });
-  }, [reports, query, filter]);
+  const filteredReports = useMemo(() => reports.filter((report) => {
+    const matchesQuery = report.fileName.toLowerCase().includes(query.toLowerCase());
+    const matchesFilter = filter === "All" || report.status === filter;
+    return matchesQuery && matchesFilter;
+  }), [reports, query, filter]);
 
   const stats = useMemo(() => ({
     total: reports.length,
@@ -126,47 +118,25 @@ function Reports() {
 
       <section className="reports-library">
         <div className="reports-toolbar">
-          <div>
-            <h3>Report Library</h3>
-            <span>{filteredReports.length} report{filteredReports.length === 1 ? "" : "s"} available</span>
-          </div>
+          <div><h3>Report Library</h3><span>{filteredReports.length} report{filteredReports.length === 1 ? "" : "s"} available</span></div>
           <div className="reports-controls">
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search file name..." aria-label="Search reports" />
-            <select value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter reports">
-              <option>All</option>
-              <option>Threat Detected</option>
-              <option>Suspicious</option>
-              <option>Clean</option>
-            </select>
+            <select value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filter reports"><option>All</option><option>Threat Detected</option><option>Suspicious</option><option>Clean</option></select>
           </div>
         </div>
 
         {filteredReports.length === 0 ? (
-          <div className="reports-empty">
-            <div className="reports-empty-icon">📄</div>
-            <h3>No reports yet</h3>
-            <p>Complete a file scan and its security report will automatically appear here.</p>
-          </div>
+          <div className="reports-empty"><div className="reports-empty-icon">📄</div><h3>No reports yet</h3><p>Complete a file scan and its security report will automatically appear here.</p></div>
         ) : (
           <div className="reports-list">
             {filteredReports.map((report) => (
               <article className="report-row" key={report.id}>
-                <div className="report-file-icon">PDF</div>
+                <div className="report-file-icon">FILE</div>
                 <div className="report-main">
-                  <div className="report-name-line">
-                    <strong title={report.fileName}>{report.fileName}</strong>
-                    <span className={`report-status ${report.status.toLowerCase().replaceAll(" ", "-")}`}>{report.status}</span>
-                  </div>
-                  <div className="report-meta">
-                    <span>{report.fileSize / 1024 / 1024 < 1 ? `${(report.fileSize / 1024).toFixed(1)} KB` : `${(report.fileSize / 1024 / 1024).toFixed(2)} MB`}</span>
-                    <span>Generated {report.generatedAt}</span>
-                    <span>{report.malicious} malicious · {report.suspicious} suspicious</span>
-                  </div>
+                  <div className="report-name-line"><strong title={report.fileName}>{report.fileName}</strong><span className={`report-status ${report.status.toLowerCase().replaceAll(" ", "-")}`}>{report.status}</span></div>
+                  <div className="report-meta"><span>{report.fileSize / 1024 / 1024 < 1 ? `${(report.fileSize / 1024).toFixed(1)} KB` : `${(report.fileSize / 1024 / 1024).toFixed(2)} MB`}</span><span>Generated {report.generatedAt}</span><span>{report.malicious} malicious · {report.suspicious} suspicious</span></div>
                 </div>
-                <div className="report-actions">
-                  <button className="report-download-btn" type="button" onClick={() => downloadStoredReport(report)}>↓ Download</button>
-                  <button className="report-delete-btn" type="button" onClick={() => handleDelete(report.id)} aria-label={`Delete report for ${report.fileName}`}>×</button>
-                </div>
+                <div className="report-actions"><button className="report-download-btn" type="button" onClick={() => downloadStoredReport(report)}>↓ Download Report</button><button className="report-delete-btn" type="button" onClick={() => handleDelete(report.id)} aria-label={`Delete report for ${report.fileName}`}>×</button></div>
               </article>
             ))}
           </div>
