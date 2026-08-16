@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import "./NotificationDropdown.css";
+import "./DashboardTheme.css";
 
 const NOTIFICATIONS_KEY = "securescan_notifications";
 const HISTORY_KEY = "securescan_scan_history";
@@ -71,24 +72,12 @@ function DashboardHeader({ activePage, onLogin }) {
   useEffect(() => {
     document.documentElement.classList.toggle("securescan-dark", darkMode);
     localStorage.setItem(THEME_KEY, darkMode ? "dark" : "light");
-    return () => document.documentElement.classList.remove("securescan-dark");
   }, [darkMode]);
 
   const unread = notifications.filter((item) => !item.read).length;
   const visibleNotifications = useMemo(() => notifications.slice(0, 3), [notifications]);
-
-  const markAllRead = () => {
-    const next = notifications.map((item) => ({ ...item, read: true }));
-    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next));
-    setNotifications(next);
-    window.dispatchEvent(new Event("securescan-notifications-updated"));
-  };
-  const markRead = (id) => {
-    const next = notifications.map((item) => item.id === id ? { ...item, read: true } : item);
-    localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next));
-    setNotifications(next);
-    window.dispatchEvent(new Event("securescan-notifications-updated"));
-  };
+  const markAllRead = () => { const next = notifications.map((item) => ({ ...item, read: true })); localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next)); setNotifications(next); window.dispatchEvent(new Event("securescan-notifications-updated")); };
+  const markRead = (id) => { const next = notifications.map((item) => item.id === id ? { ...item, read: true } : item); localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(next)); setNotifications(next); window.dispatchEvent(new Event("securescan-notifications-updated")); };
 
   return (
     <header className="dashboard-header">
@@ -96,17 +85,15 @@ function DashboardHeader({ activePage, onLogin }) {
       <div className="header-actions">
         <div className="notification-wrapper">
           <button className={`notification-button ${showNotifications ? "notification-active" : ""}`} onClick={() => setShowNotifications((value) => !value)} aria-label={`Notifications${unread ? `, ${unread} unread` : ""}`}>
-            <svg className="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
-            {unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}
-            {unread > 0 && <span className="notification-pulse"></span>}
+            <svg className="bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>{unread > 0 && <span className="notification-badge">{unread > 99 ? "99+" : unread}</span>}{unread > 0 && <span className="notification-pulse"></span>}
           </button>
           {showNotifications && <div className="notification-dropdown">
             <div className="notification-dropdown-header"><div><h3>Notifications</h3><span>{unread} unread notification{unread === 1 ? "" : "s"}</span></div>{unread > 0 && <button type="button" onClick={markAllRead}>Mark all read</button>}</div>
             <div className="notification-list">{visibleNotifications.length === 0 ? <div className="notification-empty">You're all caught up.</div> : visibleNotifications.map((notification) => <button className={`notification-item ${notification.read ? "read" : "unread"}`} key={notification.id} type="button" onClick={() => markRead(notification.id)}><div className={`notification-item-icon ${notification.type}`}>{notification.type === "danger" ? "⚠️" : "🛡️"}</div><div className="notification-item-content"><strong>{notification.title}</strong><p>{notification.message}</p><span>{formatTime(notification.createdAt)}</span></div>{!notification.read && <span className="unread-dot"></span>}</button>)}</div>
-            <button className="view-all-notifications" type="button" onClick={() => { setShowNotifications(false); }}>View all →</button>
+            <button className="view-all-notifications" type="button" onClick={() => setShowNotifications(false)}>View all →</button>
           </div>}
         </div>
-        <button className="header-theme-button" aria-label="Toggle dark mode" type="button" onClick={() => setDarkMode((value) => !value)}>{darkMode ? "☀" : "◐"}</button>
+        <button className="header-theme-button" aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"} type="button" onClick={() => setDarkMode((value) => !value)}>{darkMode ? "☀" : "◐"}</button>
         <button className="header-profile-button" aria-label="Open login page" type="button" onClick={onLogin}><span className="header-profile-avatar">A</span></button>
       </div>
     </header>
