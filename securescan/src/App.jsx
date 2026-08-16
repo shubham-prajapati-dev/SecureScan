@@ -5,7 +5,6 @@ import "./SidebarFix.css";
 
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
-import UploadPanel from "../src/components/dashboard/UploadPanel";
 
 function App() {
   const [currentPage, setCurrentPage] = useState("landing");
@@ -17,6 +16,10 @@ function App() {
     setCurrentPage("dashboard");
   };
 
+  const openDashboard = () => {
+    setCurrentPage("dashboard");
+  };
+
   const goHome = () => {
     setCurrentPage("landing");
   };
@@ -24,7 +27,10 @@ function App() {
   return (
     <>
       {currentPage === "landing" && (
-        <LandingPage onFileSelect={handleFileSelect} />
+        <LandingPage
+          onFileSelect={handleFileSelect}
+          onGetStarted={openDashboard}
+        />
       )}
 
       {currentPage === "dashboard" && (
