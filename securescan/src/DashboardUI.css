@@ -1,0 +1,354 @@
+/* =========================================================
+   DASHBOARD UI FIXES
+   Kept separate from App.css so the existing design remains intact.
+========================================================= */
+
+/* Sidebar: keep every section in normal document flow so menu items
+   never overlap the real-time protection card. */
+.dashboard-app .sidebar {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+.dashboard-app .sidebar-menu {
+  flex: 0 0 auto;
+}
+
+.dashboard-app .sidebar-menu-item {
+  flex: 0 0 auto;
+  min-height: 46px;
+}
+
+.dashboard-app .realtime-box {
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin: 18px 0 0;
+  min-height: 70px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 12px;
+  border: 1px solid rgba(96, 165, 250, .25);
+  border-radius: 12px;
+  background: rgba(37, 99, 235, .08);
+}
+
+.dashboard-app .realtime-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255,255,255,.09);
+  font-size: 21px;
+}
+
+.dashboard-app .realtime-box > div:last-child {
+  min-width: 0;
+}
+
+.dashboard-app .realtime-box strong {
+  display: block;
+  color: #f8fbff;
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.dashboard-app .realtime-box span {
+  display: block;
+  margin-top: 4px;
+  color: #59d68b;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.dashboard-app .sidebar-home {
+  flex: 0 0 auto;
+  margin-top: 14px;
+}
+
+.dashboard-app .sidebar-profile {
+  margin-top: auto;
+  flex: 0 0 auto;
+}
+
+/* Quarantine page */
+.quarantine-page {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.quarantine-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 30px;
+  border-radius: 20px;
+  color: #fff;
+  background: linear-gradient(135deg, #07182f, #12396c 62%, #2563eb);
+  box-shadow: 0 16px 38px rgba(16, 52, 103, .16);
+}
+
+.quarantine-eyebrow {
+  display: block;
+  margin-bottom: 7px;
+  color: #9fc2ff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.7px;
+}
+
+.quarantine-hero h2 {
+  margin: 0;
+  color: #fff;
+  font-size: 30px;
+}
+
+.quarantine-hero p {
+  margin-top: 7px;
+  max-width: 620px;
+  color: #c7d7ed;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.quarantine-shield {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 20px;
+  background: rgba(255,255,255,.1);
+  font-size: 32px;
+}
+
+.quarantine-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.quarantine-stats > div {
+  padding: 17px 18px;
+  border: 1px solid #e4eaf2;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(15,35,65,.04);
+}
+
+.quarantine-stats strong {
+  display: block;
+  color: #17213a;
+  font-size: 19px;
+}
+
+.quarantine-stats span {
+  display: block;
+  margin-top: 4px;
+  color: #7a879a;
+  font-size: 10px;
+}
+
+.quarantine-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.quarantine-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #e4eaf2;
+  border-radius: 15px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(15,35,65,.04);
+}
+
+.quarantine-file-icon {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff0f1;
+  color: #d92d3f;
+  font-size: 19px;
+  font-weight: 900;
+}
+
+.quarantine-file-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.quarantine-file-info strong,
+.quarantine-file-info span,
+.quarantine-file-info small {
+  display: block;
+}
+
+.quarantine-file-info strong {
+  overflow: hidden;
+  color: #1d2940;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quarantine-file-info span {
+  margin-top: 4px;
+  color: #77859a;
+  font-size: 10px;
+}
+
+.quarantine-file-info small {
+  margin-top: 4px;
+  color: #c1121f;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.quarantine-badge {
+  padding: 6px 9px;
+  border: 1px solid #fecdd3;
+  border-radius: 999px;
+  background: #fff1f2;
+  color: #c1121f;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.quarantine-delete {
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  padding: 8px 11px;
+  background: #fff;
+  color: #dc2626;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.quarantine-empty {
+  padding: 65px 25px;
+  text-align: center;
+  border: 1px dashed #d7e0eb;
+  border-radius: 18px;
+  background: linear-gradient(145deg, #f8fbff, #fff);
+}
+
+.quarantine-empty > div {
+  font-size: 38px;
+}
+
+.quarantine-empty h3 {
+  margin-top: 12px;
+  color: #17213a;
+  font-size: 18px;
+}
+
+.quarantine-empty p {
+  max-width: 520px;
+  margin: 8px auto 0;
+  color: #77859a;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.quarantine-page-error {
+  margin-bottom: 12px;
+  padding: 11px 13px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fff1f2;
+  color: #b42318;
+  font-size: 11px;
+}
+
+/* Scan-result quarantine action */
+.quarantine-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 16px;
+  padding: 13px 14px;
+  border: 1px solid #fecdd3;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #fff5f5, #fffafa);
+}
+
+.quarantine-action strong,
+.quarantine-action span {
+  display: block;
+}
+
+.quarantine-action strong {
+  color: #8f1724;
+  font-size: 12px;
+}
+
+.quarantine-action span {
+  margin-top: 3px;
+  color: #8a6670;
+  font-size: 10px;
+}
+
+.quarantine-action button {
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 9px;
+  padding: 10px 14px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  box-shadow: 0 7px 16px rgba(220,38,38,.18);
+}
+
+.quarantine-action button:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}
+
+.quarantine-success,
+.quarantine-error {
+  margin-top: 9px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
+.quarantine-success {
+  background: #ecfdf3;
+  color: #087443;
+}
+
+.quarantine-error {
+  background: #fff1f2;
+  color: #b42318;
+}
+
+@media (max-width: 700px) {
+  .quarantine-stats { grid-template-columns: 1fr; }
+  .quarantine-hero { padding: 22px; }
+  .quarantine-card { align-items: flex-start; flex-wrap: wrap; }
+  .quarantine-badge { margin-left: 58px; }
+  .quarantine-delete { margin-left: auto; }
+  .quarantine-action { align-items: flex-start; flex-direction: column; }
+  .quarantine-action button { width: 100%; }
+}
