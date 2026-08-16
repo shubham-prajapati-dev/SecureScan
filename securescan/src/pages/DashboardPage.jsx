@@ -11,17 +11,17 @@ import Reports from "../dashboardPages/Reports";
 import Settings from "../dashboardPages/Settings";
 import HelpSupport from "../dashboardPages/HelpSupport";
 import Pricing from "../dashboardPages/Pricing";
+import Login from "../dashboardPages/Login";
 
 function DashboardPage({ selectedFile, onFileSelect, onHome }) {
   const [activePage, setActivePage] = useState("Dashboard");
-
-  const showHeader = activePage !== "Pricing";
+  const showHeader = activePage !== "Pricing" && activePage !== "Login";
 
   return (
     <div className="dashboard-app">
-      <Sidebar activePage={activePage} setActivePage={setActivePage} onHome={onHome} />
-      <main className="dashboard-main">
-        {showHeader && <DashboardHeader activePage={activePage} />}
+      {activePage !== "Login" && <Sidebar activePage={activePage} setActivePage={setActivePage} onHome={onHome} />}
+      <main className={activePage === "Login" ? "dashboard-main login-main" : "dashboard-main"}>
+        {showHeader && <DashboardHeader activePage={activePage} onLogin={() => setActivePage("Login")} />}
         {activePage === "Dashboard" && <DashboardHome selectedFile={selectedFile} onFileSelect={onFileSelect} />}
         {activePage === "Scan Files" && <ScanFiles selectedFile={selectedFile} onFileSelect={onFileSelect} />}
         {activePage === "Scan History" && <ScanHistory />}
@@ -31,6 +31,7 @@ function DashboardPage({ selectedFile, onFileSelect, onHome }) {
         {activePage === "Settings" && <Settings />}
         {activePage === "Help & Support" && <HelpSupport />}
         {activePage === "Pricing" && <Pricing onBack={() => setActivePage("Dashboard")} />}
+        {activePage === "Login" && <Login onBack={() => setActivePage("Dashboard")} />}
       </main>
     </div>
   );
