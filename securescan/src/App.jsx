@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./App.css";
 import "./DashboardUI.css";
+import "./SidebarFix.css";
 
 import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
