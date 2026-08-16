@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./ScanResult.css";
 
 const API_BASE_URL =
   window.location.hostname === "localhost" ||
