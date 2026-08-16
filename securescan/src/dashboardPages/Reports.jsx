@@ -6,6 +6,7 @@ import {
   deleteReport,
   downloadStoredReport,
   getReports,
+  getReportsClearedAt,
   saveReport,
 } from "../utils/reportStore";
 
@@ -45,17 +46,16 @@ function Reports() {
   const loadReports = () => {
     const stored = getReports();
     const storedIds = new Set(stored.map((report) => report.analysisId));
+    const clearedAt = getReportsClearedAt();
     const historyReports = getHistory()
       .filter((scan) => scan.result && (scan.status === "Completed" || scan.status === "Quarantined"))
+      .filter((scan) => !clearedAt || new Date(scan.scannedAt || 0).getTime() > clearedAt)
       .filter((scan) => !storedIds.has(scan.id))
       .map(createReportFromScan);
 
-    historyReports.forEach((report) => saveReport(report, false));
-    const merged = [...historyReports, ...stored].reduce((all, report) => {
-      if (!all.some((item) => item.id === report.id)) all.push(report);
-      return all;
-    }, []);
-    setReports(merged.sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt)));
+    historyReports.forEach((report) => saveReport(report));
+    const refreshed = getReports();
+    setReports(refreshed.sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt)));
   };
 
   useEffect(() => {
