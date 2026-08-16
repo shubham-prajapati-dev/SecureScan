@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import "./ScanResult.css";
+import { quarantineFile } from "../../utils/quarantineStore";
 
 const API_BASE_URL =
   window.location.hostname === "localhost" ||
@@ -24,6 +25,24 @@ function saveScanHistory(scan) {
   }
 }
 
+function getSavedCompletedScan(file) {
+  try {
+    const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    if (!Array.isArray(history)) return null;
+
+    return history.find(
+      (item) =>
+        item.fileName === file.name &&
+        Number(item.fileSize) === Number(file.size) &&
+        Number(item.lastModified) === Number(file.lastModified) &&
+        (item.status === "Completed" || item.status === "Quarantined") &&
+        item.result
+    ) || null;
+  } catch {
+    return null;
+  }
+}
+
 async function readApiResponse(response, fallbackMessage) {
   const text = await response.text();
   let data = {};
@@ -43,13 +62,30 @@ function ScanningPanel({ selectedFile }) {
   const [status, setStatus] = useState("Starting scan...");
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [analysisId, setAnalysisId] = useState(null);
+  const [quarantineStatus, setQuarantineStatus] = useState("");
+
+  const fileFingerprint = useMemo(
+    () => selectedFile ? `${selectedFile.name}:${selectedFile.size}:${selectedFile.lastModified}` : "",
+    [selectedFile]
+  );
 
   useEffect(() => {
-    if (!selectedFile) return;
+    if (!selectedFile || !fileFingerprint) return;
 
     let cancelled = false;
     let pollTimer;
     let historyId = null;
+
+    const savedScan = getSavedCompletedScan(selectedFile);
+    if (savedScan) {
+      setProgress(100);
+      setStatus("Scan already completed — showing saved result");
+      setResult(savedScan.result);
+      setAnalysisId(savedScan.id);
+      setError("");
+      return () => { cancelled = true; };
+    }
 
     const scanFile = async () => {
       try {
@@ -57,6 +93,7 @@ function ScanningPanel({ selectedFile }) {
         setStatus("Connecting to SecureScan...");
         setError("");
         setResult(null);
+        setQuarantineStatus("");
 
         const formData = new FormData();
         formData.append("file", selectedFile);
@@ -70,11 +107,13 @@ function ScanningPanel({ selectedFile }) {
 
         if (cancelled) return;
         historyId = uploadData.analysisId;
+        setAnalysisId(historyId);
 
         saveScanHistory({
           id: historyId,
           fileName: selectedFile.name,
           fileSize: selectedFile.size,
+          lastModified: selectedFile.lastModified,
           scannedAt: new Date().toISOString(),
           status: "Scanning",
           progress: 15,
@@ -107,6 +146,7 @@ function ScanningPanel({ selectedFile }) {
                 id: historyId,
                 fileName: selectedFile.name,
                 fileSize: selectedFile.size,
+                lastModified: selectedFile.lastModified,
                 scannedAt: new Date().toISOString(),
                 status: "Completed",
                 progress: 100,
@@ -138,6 +178,7 @@ function ScanningPanel({ selectedFile }) {
                   id: historyId,
                   fileName: selectedFile.name,
                   fileSize: selectedFile.size,
+                  lastModified: selectedFile.lastModified,
                   status: "Failed",
                   scannedAt: new Date().toISOString(),
                   error: pollError.message || "Scan status check failed.",
@@ -168,7 +209,35 @@ function ScanningPanel({ selectedFile }) {
       cancelled = true;
       if (pollTimer) window.clearTimeout(pollTimer);
     };
-  }, [selectedFile]);
+  }, [selectedFile, fileFingerprint]);
+
+  const handleQuarantine = async () => {
+    if (!selectedFile || !result || !analysisId) return;
+
+    try {
+      setQuarantineStatus("Quarantining...");
+      const record = await quarantineFile(selectedFile, {
+        id: `q-${analysisId}`,
+        analysisId,
+        result,
+      });
+
+      saveScanHistory({
+        id: analysisId,
+        fileName: selectedFile.name,
+        fileSize: selectedFile.size,
+        lastModified: selectedFile.lastModified,
+        status: "Quarantined",
+        progress: 100,
+        result,
+        quarantinedAt: record.quarantinedAt,
+      });
+
+      setQuarantineStatus("File quarantined successfully");
+    } catch (quarantineError) {
+      setQuarantineStatus(quarantineError.message || "Unable to quarantine this file.");
+    }
+  };
 
   const fileSize = selectedFile ? selectedFile.size / 1024 / 1024 : 0;
   const malicious = Number(result?.malicious || 0);
@@ -176,6 +245,7 @@ function ScanningPanel({ selectedFile }) {
   const harmless = Number(result?.harmless || 0);
   const undetected = Number(result?.undetected || 0);
   const total = malicious + suspicious + harmless + undetected;
+  const hasThreat = malicious > 0 || suspicious > 0;
 
   return (
     <div className="scanning-panel">
@@ -221,23 +291,29 @@ function ScanningPanel({ selectedFile }) {
             </div>
 
             <div className="scan-result-grid">
-              <div className="result-stat malicious-stat">
-                <span className="result-dot" />
-                <div><strong>{malicious}</strong><small>Malicious</small></div>
-              </div>
-              <div className="result-stat suspicious-stat">
-                <span className="result-dot" />
-                <div><strong>{suspicious}</strong><small>Suspicious</small></div>
-              </div>
-              <div className="result-stat harmless-stat">
-                <span className="result-dot" />
-                <div><strong>{harmless}</strong><small>Harmless</small></div>
-              </div>
-              <div className="result-stat undetected-stat">
-                <span className="result-dot" />
-                <div><strong>{undetected}</strong><small>Undetected</small></div>
-              </div>
+              <div className="result-stat malicious-stat"><span className="result-dot" /><div><strong>{malicious}</strong><small>Malicious</small></div></div>
+              <div className="result-stat suspicious-stat"><span className="result-dot" /><div><strong>{suspicious}</strong><small>Suspicious</small></div></div>
+              <div className="result-stat harmless-stat"><span className="result-dot" /><div><strong>{harmless}</strong><small>Harmless</small></div></div>
+              <div className="result-stat undetected-stat"><span className="result-dot" /><div><strong>{undetected}</strong><small>Undetected</small></div></div>
             </div>
+
+            {hasThreat && (
+              <div className="quarantine-action">
+                <div>
+                  <strong>Isolate this file</strong>
+                  <span>Move the scanned file into SecureScan Quarantine storage.</span>
+                </div>
+                <button type="button" onClick={handleQuarantine} disabled={quarantineStatus === "Quarantining..." || quarantineStatus === "File quarantined successfully"}>
+                  {quarantineStatus === "Quarantining..." ? "Quarantining..." : quarantineStatus === "File quarantined successfully" ? "✓ Quarantined" : "Quarantine File"}
+                </button>
+              </div>
+            )}
+
+            {quarantineStatus && quarantineStatus !== "Quarantining..." && (
+              <div className={quarantineStatus.includes("successfully") ? "quarantine-success" : "quarantine-error"}>
+                {quarantineStatus}
+              </div>
+            )}
           </div>
         )}
 
