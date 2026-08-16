@@ -3,15 +3,11 @@ import React, { useEffect, useMemo, useState } from "react";
 const NOTIFICATIONS_KEY = "securescan_notifications";
 const HISTORY_KEY = "securescan_scan_history";
 
-function getNotifications() {
+function getHistoryNotifications() {
   try {
-    const saved = JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "[]");
-    if (Array.isArray(saved) && saved.length) return saved;
-
     const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
     if (!Array.isArray(history)) return [];
-
-    return history.slice(0, 20).map((item) => ({
+    return history.slice(0, 20).filter((item) => item.result && (item.status === "Completed" || item.status === "Quarantined")).map((item) => ({
       id: `scan-${item.id}`,
       type: item.result?.malicious > 0 ? "danger" : "success",
       title: item.result?.malicious > 0 ? "Threat Detected" : "Scan Completed",
@@ -21,6 +17,26 @@ function getNotifications() {
       createdAt: item.scannedAt || new Date().toISOString(),
       read: false,
     }));
+  } catch {
+    return [];
+  }
+}
+
+function getNotifications() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(NOTIFICATIONS_KEY) || "[]");
+    const savedList = Array.isArray(saved) ? saved : [];
+    const historyList = getHistoryNotifications();
+    const byId = new Map();
+
+    [...savedList, ...historyList].forEach((item) => {
+      const existing = byId.get(item.id);
+      byId.set(item.id, existing ? { ...item, read: existing.read } : item);
+    });
+
+    return [...byId.values()]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 50);
   } catch {
     return [];
   }
@@ -47,12 +63,10 @@ function DashboardHeader({ activePage }) {
 
   useEffect(() => {
     loadNotifications();
-
     const refresh = () => loadNotifications();
     window.addEventListener("storage", refresh);
     window.addEventListener("securescan-notifications-updated", refresh);
     window.addEventListener("securescan-history-updated", refresh);
-
     const interval = window.setInterval(refresh, 2000);
     return () => {
       window.removeEventListener("storage", refresh);
@@ -133,10 +147,7 @@ function DashboardHeader({ activePage }) {
                 ))}
               </div>
 
-              <button
-                className="view-all-notifications"
-                onClick={() => setShowNotifications(false)}
-              >
+              <button className="view-all-notifications" onClick={() => setShowNotifications(false)}>
                 View all →
               </button>
             </div>
