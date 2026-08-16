@@ -10,15 +10,18 @@ import Quarantine from "../dashboardPages/Quarantine";
 import Reports from "../dashboardPages/Reports";
 import Settings from "../dashboardPages/Settings";
 import HelpSupport from "../dashboardPages/HelpSupport";
+import Pricing from "../dashboardPages/Pricing";
 
 function DashboardPage({ selectedFile, onFileSelect, onHome }) {
   const [activePage, setActivePage] = useState("Dashboard");
+
+  const showHeader = activePage !== "Pricing";
 
   return (
     <div className="dashboard-app">
       <Sidebar activePage={activePage} setActivePage={setActivePage} onHome={onHome} />
       <main className="dashboard-main">
-        <DashboardHeader activePage={activePage} />
+        {showHeader && <DashboardHeader activePage={activePage} />}
         {activePage === "Dashboard" && <DashboardHome selectedFile={selectedFile} onFileSelect={onFileSelect} />}
         {activePage === "Scan Files" && <ScanFiles selectedFile={selectedFile} onFileSelect={onFileSelect} />}
         {activePage === "Scan History" && <ScanHistory />}
@@ -27,6 +30,7 @@ function DashboardPage({ selectedFile, onFileSelect, onHome }) {
         {activePage === "Reports" && <Reports />}
         {activePage === "Settings" && <Settings />}
         {activePage === "Help & Support" && <HelpSupport />}
+        {activePage === "Pricing" && <Pricing onBack={() => setActivePage("Dashboard")} />}
       </main>
     </div>
   );
