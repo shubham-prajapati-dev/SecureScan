@@ -5,7 +5,7 @@ function Sidebar({ activePage, setActivePage, onHome }) {
     ["⌂", "Dashboard"],
     ["▣", "Scan Files"],
     ["◷", "Scan History"],
-    ["🔔", "Notifications"],
+    ["⁜", "Notifications"],
     ["▤", "Quarantine"],
     ["▤", "Reports"],
     ["⚙", "Settings"],
