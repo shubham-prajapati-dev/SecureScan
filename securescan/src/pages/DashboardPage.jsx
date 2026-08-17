@@ -10,12 +10,15 @@ import Quarantine from "../dashboardPages/Quarantine";
 import Reports from "../dashboardPages/Reports";
 import Settings from "../dashboardPages/Settings";
 import HelpSupport from "../dashboardPages/HelpSupport";
+import Documentation from "../dashboardPages/Documentation";
+import ContactSupport from "../dashboardPages/ContactSupport";
 import Pricing from "../dashboardPages/Pricing";
 import Login from "../dashboardPages/Login";
 
 function DashboardPage({ selectedFile, onFileSelect, onHome }) {
   const [activePage, setActivePage] = useState("Dashboard");
-  const showHeader = activePage !== "Pricing" && activePage !== "Login";
+  const showHeader = !["Pricing", "Login", "Documentation", "Contact Support"].includes(activePage);
+  const openHelp = () => setActivePage("Help & Support");
 
   return (
     <div className="dashboard-app">
@@ -29,7 +32,9 @@ function DashboardPage({ selectedFile, onFileSelect, onHome }) {
         {activePage === "Quarantine" && <Quarantine />}
         {activePage === "Reports" && <Reports />}
         {activePage === "Settings" && <Settings />}
-        {activePage === "Help & Support" && <HelpSupport />}
+        {activePage === "Help & Support" && <HelpSupport onDocumentation={() => setActivePage("Documentation")} onContactSupport={() => setActivePage("Contact Support")} />}
+        {activePage === "Documentation" && <Documentation onBack={openHelp} />}
+        {activePage === "Contact Support" && <ContactSupport onBack={openHelp} />}
         {activePage === "Pricing" && <Pricing onBack={() => setActivePage("Dashboard")} />}
         {activePage === "Login" && <Login onBack={() => setActivePage("Dashboard")} />}
       </main>
