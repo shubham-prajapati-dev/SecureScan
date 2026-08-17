@@ -17,6 +17,10 @@ function LandingFooter() {
         Advanced File Security
       </span>
 
+      <span>
+      DWL❤️ By Shubham
+      </span>
+
     </footer>
   );
 }
